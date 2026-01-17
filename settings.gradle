@@ -1,0 +1,3 @@
+rootProject.name = 'it-support-platform'
+include 'services:api'
+include 'services:worker'
