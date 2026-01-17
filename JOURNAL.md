@@ -49,3 +49,6 @@ This document keeps track of activities carried out during the development of th
     password: postgres
   ```
 - Ran app to auto-run migration
+- Added a placeholder `POST /incidents` endpoint:
+  1. Created Incident and WorkflowRun classes (and workflow step and workflow status enums)
+  2. Created Incident Controller and Create Incident Response classes
