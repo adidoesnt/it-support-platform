@@ -52,3 +52,8 @@ This document keeps track of activities carried out during the development of th
 - Added a placeholder `POST /incidents` endpoint:
   1. Created Incident and WorkflowRun classes (and workflow step and workflow status enums)
   2. Created Incident Controller and Create Incident Response classes
+- Added logic for the `POST /incidents` endpoint:
+  1. Check for `Idempotency-Key` header, return 400 if not present
+  2. Check for existing Idempotency Key entity:
+    - If present, return associated workflow run
+    - Else, create a new incident, workflow run and associate it with a new Idempotency Key entity
