@@ -61,3 +61,4 @@ This document keeps track of activities carried out during the development of th
 - Added AWS and SQS config to API `application.yaml`
 - Create `AwsSqsConfig` class
 - Add `QueueResolver` class to get queue url based on localstack endpoint and queue name
+- Define workflow message body and add `WorkflowEnqueuer` class to send messages to the queue
