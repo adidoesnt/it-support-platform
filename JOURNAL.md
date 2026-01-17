@@ -60,3 +60,4 @@ This document keeps track of activities carried out during the development of th
 - Created SQS queue via Terraform (queue is in `eu-west-2`)
 - Added AWS and SQS config to API `application.yaml`
 - Create `AwsSqsConfig` class
+- Add `QueueResolver` class to get queue url based on localstack endpoint and queue name
