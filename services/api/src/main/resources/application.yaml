@@ -1,10 +1,13 @@
 spring:
   application:
     name: api
+  datasource:
+    url: jdbc:postgresql://localhost:5434/it_support_platform
+    username: postgres
+    password: postgres
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info,prometheus
-        

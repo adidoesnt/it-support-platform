@@ -28,3 +28,24 @@ This document keeps track of activities carried out during the development of th
   ```bash
   ./gradlew :services:api:bootRun  # --info --stacktrace (optional)
   ```
+- Created database schema (under `services/api/src/main/resources/db/migration`)
+- Added dependencies for `flyway`, our migration tool:
+
+  ```
+  implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+  implementation 'org.springframework.boot:spring-boot-starter-flyway'
+  implementation 'org.flywaydb:flyway-database-postgresql'
+
+  runtimeOnly 'org.postgresql:postgresql'
+  ```
+
+- Updated application config at `services/api/src/main/resources/application.yaml`:
+  ```yaml
+  spring:
+  [... other config]
+  datasource:
+    url: jdbc:postgresql://localhost:5434/it_support_platform
+    username: postgres
+    password: postgres
+  ```
+- Ran app to auto-run migration
