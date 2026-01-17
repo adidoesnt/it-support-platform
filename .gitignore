@@ -40,3 +40,6 @@ out/
 .env.*
 .env
 !.env.example
+
+### Mac OS ###
+.DS_Store
