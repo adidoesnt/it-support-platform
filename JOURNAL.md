@@ -59,3 +59,4 @@ This document keeps track of activities carried out during the development of th
     - Else, create a new incident, workflow run and associate it with a new Idempotency Key entity
 - Created SQS queue via Terraform (queue is in `eu-west-2`)
 - Added AWS and SQS config to API `application.yaml`
+- Create `AwsSqsConfig` class

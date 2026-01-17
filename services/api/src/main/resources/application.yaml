@@ -3,6 +3,8 @@ spring:
     name: api
     aws:
       region: eu-west-2
+      access-key: test
+      secret-key: test
       sqs:
         endpoint: http://localhost:4567
         queue-name: incident-workflow
