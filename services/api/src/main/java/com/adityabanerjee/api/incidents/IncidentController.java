@@ -1,26 +1,95 @@
 package com.adityabanerjee.api.incidents;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.math.BigInteger;
+import java.util.Optional;
 
 import com.adityabanerjee.api.incidents.responses.CreateIncidentResponse;
+import com.adityabanerjee.api.idempotencyKeys.IdempotencyKeyRepository;
+import com.adityabanerjee.api.idempotencyKeys.IdempotencyKey;
+import com.adityabanerjee.api.workflowRuns.WorkflowRunRepository;
+import com.adityabanerjee.api.workflowRuns.WorkflowRun;
+import com.adityabanerjee.api.workflowRuns.WorkflowStep;
+import com.adityabanerjee.api.workflowRuns.WorkflowStatus;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/incidents")
 public class IncidentController {
+    private final IncidentRepository incidentRepository;
+    private final IdempotencyKeyRepository idempotencyKeyRepository;
+    private final WorkflowRunRepository workflowRunRepository;
+
+    public IncidentController(IncidentRepository incidentRepository,
+            IdempotencyKeyRepository idempotencyKeyRepository,
+            WorkflowRunRepository workflowRunRepository) {
+        this.incidentRepository = incidentRepository;
+        this.idempotencyKeyRepository = idempotencyKeyRepository;
+        this.workflowRunRepository = workflowRunRepository;
+    }
 
     @PostMapping
-    public ResponseEntity<CreateIncidentResponse> createIncident(@RequestBody Incident incident) {
-        // TODO: Implement the logic to create an incident
+    @Transactional
+    public ResponseEntity<CreateIncidentResponse> createIncident(@RequestBody Incident incident,
+            HttpServletRequest request) {
+        // Check for idempotency (using the idempotency key header)
+        String idempotencyKey = request.getHeader("Idempotency-Key");
+        System.out.println(String.format("Idempotency key: %s", idempotencyKey));
 
-        BigInteger workflowRunId = BigInteger.valueOf((int) (Math.random() * Integer.MAX_VALUE));
-        CreateIncidentResponse response = new CreateIncidentResponse(workflowRunId);
+        if (idempotencyKey == null) {
+            System.out.println("Idempotency key is missing");
+            return ResponseEntity.badRequest().body(new CreateIncidentResponse(null));
+        }
 
-        return ResponseEntity.ok(response);
+        Optional<IdempotencyKey> idempotencyKeyEntity = idempotencyKeyRepository.findById(idempotencyKey);
+        System.out
+                .println(String.format("Existing idempotency key entity: %s",
+                        idempotencyKeyEntity.map(IdempotencyKey::workflowRunId).orElse(null)));
+        if (idempotencyKeyEntity.isPresent()) {
+            BigInteger workflowRunId = idempotencyKeyEntity.get().workflowRunId();
+            System.out.println(String.format("Idempotency key %s already , returning existing workflow run id %s",
+                    idempotencyKey, workflowRunId));
+            return ResponseEntity.ok(new CreateIncidentResponse(workflowRunId));
+        }
+
+        // Create a new incident
+        Incident savedIncident = incidentRepository.save(incident);
+        System.out.println(String.format("Saved incident with id %s", savedIncident.id()));
+
+        // Create a new workflow and associate it with the idempotency key
+        WorkflowRun workflowRun = new WorkflowRun(
+                null,
+                savedIncident.id(),
+                WorkflowStep.PAYLOAD_VALIDATION,
+                WorkflowStatus.PENDING,
+                null,
+                null);
+        WorkflowRun savedWorkflowRun = workflowRunRepository.save(workflowRun);
+        System.out.println(String.format("Saved workflow run with id %s", savedWorkflowRun.id()));
+
+        // Insert the idempotency key and associate it with the workflow run
+        try {
+            IdempotencyKey savedIdempotencyKey = idempotencyKeyRepository
+                    .save(new IdempotencyKey(idempotencyKey, savedWorkflowRun.id(), null, null));
+            System.out.println(String.format("Saved idempotency key with id %s", savedIdempotencyKey.key()));
+        } catch (DuplicateKeyException e) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            System.out.println(String.format("Duplicate idempotency key %s found, rolling back transaction", idempotencyKey));
+
+            return idempotencyKeyRepository.findById(idempotencyKey)
+                    .map(key -> ResponseEntity.ok(new CreateIncidentResponse(key.workflowRunId())))
+                    .orElseThrow();
+        }
+
+        return ResponseEntity.ok(new CreateIncidentResponse(savedWorkflowRun.id()));
     }
 }
