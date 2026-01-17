@@ -57,3 +57,4 @@ This document keeps track of activities carried out during the development of th
   2. Check for existing Idempotency Key entity:
     - If present, return associated workflow run
     - Else, create a new incident, workflow run and associate it with a new Idempotency Key entity
+- Created SQS queue via Terraform (queue is in `eu-west-2`)
