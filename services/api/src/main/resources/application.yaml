@@ -1,6 +1,11 @@
 spring:
   application:
     name: api
+    aws:
+      region: eu-west-2
+      sqs:
+        endpoint: http://localhost:4567
+        queue-name: incident-workflow
   datasource:
     url: jdbc:postgresql://localhost:5434/it_support_platform
     username: postgres
