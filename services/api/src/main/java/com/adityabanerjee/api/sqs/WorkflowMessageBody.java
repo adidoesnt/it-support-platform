@@ -2,15 +2,13 @@ package com.adityabanerjee.api.sqs;
 
 import java.math.BigInteger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public record WorkflowMessageBody(BigInteger workflowRunId) {
-    public String toJson() {
-        try {
-            return new ObjectMapper().writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to convert WorkflowMessageBody to JSON", e);
-        }
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    public String toJson() throws JsonProcessingException {
+        return objectMapper.writeValueAsString(this);
     }
 }

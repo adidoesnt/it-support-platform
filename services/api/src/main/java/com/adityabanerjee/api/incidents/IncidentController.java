@@ -18,9 +18,11 @@ import com.adityabanerjee.api.idempotencyKeys.IdempotencyKey;
 import com.adityabanerjee.api.workflowRuns.WorkflowRunRepository;
 import com.adityabanerjee.api.workflowRuns.WorkflowRun;
 import com.adityabanerjee.api.workflowRuns.WorkflowStep;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.adityabanerjee.api.workflowRuns.WorkflowStatus;
 
 import jakarta.servlet.http.HttpServletRequest;
+import com.adityabanerjee.api.sqs.WorkflowEnqueuer;
 
 @RestController
 @RequestMapping("/incidents")
@@ -28,13 +30,16 @@ public class IncidentController {
     private final IncidentRepository incidentRepository;
     private final IdempotencyKeyRepository idempotencyKeyRepository;
     private final WorkflowRunRepository workflowRunRepository;
+    private final WorkflowEnqueuer workflowEnqueuer;
 
     public IncidentController(IncidentRepository incidentRepository,
             IdempotencyKeyRepository idempotencyKeyRepository,
-            WorkflowRunRepository workflowRunRepository) {
+            WorkflowRunRepository workflowRunRepository,
+            WorkflowEnqueuer workflowEnqueuer) {
         this.incidentRepository = incidentRepository;
         this.idempotencyKeyRepository = idempotencyKeyRepository;
         this.workflowRunRepository = workflowRunRepository;
+        this.workflowEnqueuer = workflowEnqueuer;
     }
 
     @PostMapping
@@ -83,11 +88,23 @@ public class IncidentController {
             System.out.println(String.format("Saved idempotency key with id %s", savedIdempotencyKey.key()));
         } catch (DuplicateKeyException e) {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            System.out.println(String.format("Duplicate idempotency key %s found, rolling back transaction", idempotencyKey));
+            System.out.println(
+                    String.format("Duplicate idempotency key %s found, rolling back transaction", idempotencyKey));
 
             return idempotencyKeyRepository.findById(idempotencyKey)
                     .map(key -> ResponseEntity.ok(new CreateIncidentResponse(key.workflowRunId())))
                     .orElseThrow();
+        }
+
+        // Enqueue the workflow run
+        try {
+            workflowEnqueuer.enqueueWorkflow(savedWorkflowRun.id());
+        } catch (JsonProcessingException e) {
+            System.out.println(String.format("Invalid JSON for workflow message body: %s", e.getMessage()));
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            System.out.println(String.format("Rolling back transaction for invalid JSON for workflow message body: %s",
+                    e.getMessage()));
+            return ResponseEntity.internalServerError().build();
         }
 
         return ResponseEntity.ok(new CreateIncidentResponse(savedWorkflowRun.id()));

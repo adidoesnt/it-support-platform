@@ -2,6 +2,8 @@ package com.adityabanerjee.api.sqs;
 
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
@@ -18,7 +20,7 @@ public class WorkflowEnqueuer {
         this.sqsClient = sqsClient;
     }
 
-    public void enqueueWorkflow(BigInteger workflowRunId) {
+    public void enqueueWorkflow(BigInteger workflowRunId) throws JsonProcessingException {
         String queueUrl = queueResolver.getQueueUrl();
         System.out.println(String.format("Fetched queue URL: %s", queueUrl));
 
