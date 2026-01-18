@@ -129,3 +129,4 @@ This document keeps track of activities carried out during the development of th
 - Add `LLMClient` interface and `OllamaClient` that implements it
 - Add `IncidentClassifier` interface and `LlmIncidentClassifier` that implements it
 - Add `incident_classifications` table
+- Add incident classification model and repository
