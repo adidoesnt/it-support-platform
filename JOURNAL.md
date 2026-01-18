@@ -111,3 +111,4 @@ This document keeps track of activities carried out during the development of th
       queue-name: incident-workflow
   ```
 - Created `AwsSqsConfig` class in `worker`
+- Created `QueueUrlResolver` class in `worker`
