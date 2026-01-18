@@ -109,7 +109,7 @@ public class WorkflowProcessor {
                 workflowRun.currentStep(),
                 WorkflowStatus.IN_PROGRESS, // Only update the status
                 workflowRun.createdAt(),
-                workflowRun.updatedAt());
+                LocalDateTime.now());
         workflowRunRepository.save(updatedStatusWorkflowRun);
 
         // TODO: Implement payload validation
@@ -125,7 +125,7 @@ public class WorkflowProcessor {
                 WorkflowStep.INCIDENT_CLASSIFICATION, // Only update the step, keep the status
                 updatedStatusWorkflowRun.status(),
                 updatedStatusWorkflowRun.createdAt(),
-                updatedStatusWorkflowRun.updatedAt());
+                LocalDateTime.now());
         workflowRunRepository.save(updatedStepWorkflowRun);
 
         return new StepResult(true, true);
@@ -173,7 +173,7 @@ public class WorkflowProcessor {
                 WorkflowStep.TICKET_CREATION,
                 workflowRun.status(),
                 workflowRun.createdAt(),
-                workflowRun.updatedAt());
+                LocalDateTime.now());
         workflowRunRepository.save(updatedStepWorkflowRun);
 
         return new StepResult(true, true);
@@ -209,7 +209,7 @@ public class WorkflowProcessor {
                 workflowRun.currentStep(),
                 WorkflowStatus.COMPLETED, // Only update the status
                 workflowRun.createdAt(),
-                workflowRun.updatedAt());
+                LocalDateTime.now());
         workflowRunRepository.save(updatedStepWorkflowRun);
 
         // This is the last step, so we don't enqueue the next step
