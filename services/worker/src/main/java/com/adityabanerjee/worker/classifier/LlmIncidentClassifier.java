@@ -31,16 +31,27 @@ public class LlmIncidentClassifier implements IncidentClassifier {
             String rawResponse = llmClient.generateText(prompt);
             String jsonOnly = extractFirstJsonObject(rawResponse);
 
-            return objectMapper.readValue(jsonOnly, ClassificationResult.class);
+            ClassificationResult classificationResult = objectMapper.readValue(jsonOnly, ClassificationResult.class);
+
+            // Validate the classification result
+            // If the values are not in the enums, an exception will be thrown
+            IncidentCategory.valueOf(classificationResult.category());
+            IncidentPriority.valueOf(classificationResult.priority());
+
+            // Validate the summary
+            if (classificationResult.summary() == null || classificationResult.summary().isBlank()) {
+                throw new IllegalArgumentException("No summary generated");
+            }
+
+            return classificationResult;
         } catch (Exception e) {
             System.out.println(String.format("[WARNING] Error classifying incident: %s", e.getMessage()));
 
             // Classification is best effort, so we return a default result
             return new ClassificationResult(
-                IncidentCategory.OTHER.name(),
-                IncidentPriority.P3.name(),
-                "Unknown incident"
-            );
+                    IncidentCategory.OTHER.name(),
+                    IncidentPriority.P3.name(),
+                    "Unknown incident");
         }
     }
 
