@@ -9,6 +9,7 @@ import com.adityabanerjee.worker.workflowRuns.WorkflowStatus;
 import com.adityabanerjee.worker.workflowRuns.WorkflowStep;
 
 import java.math.BigInteger;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -59,7 +60,7 @@ public class WorkflowProcessor {
                 WorkflowStep.INCIDENT_CLASSIFICATION,
                 WorkflowStatus.IN_PROGRESS,
                 workflowRun.createdAt(),
-                null); // Leave the updatedAt as null, it will be set by the database
+                LocalDateTime.now());
 
         workflowRunRepository.save(updatedWorkflowRun);
         return true; // Successfully processed the payload validation
