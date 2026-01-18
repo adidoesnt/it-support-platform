@@ -3,7 +3,6 @@ package com.adityabanerjee.worker.classifier;
 import org.springframework.stereotype.Component;
 
 import com.adityabanerjee.worker.llm.LlmClient;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
@@ -33,9 +32,15 @@ public class LlmIncidentClassifier implements IncidentClassifier {
             String jsonOnly = extractFirstJsonObject(rawResponse);
 
             return objectMapper.readValue(jsonOnly, ClassificationResult.class);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException(String.format("Failed to parse classification result: %s", e.getMessage()),
-                    e);
+        } catch (Exception e) {
+            System.out.println(String.format("[WARNING] Error classifying incident: %s", e.getMessage()));
+
+            // Classification is best effort, so we return a default result
+            return new ClassificationResult(
+                IncidentCategory.OTHER.name(),
+                IncidentPriority.P3.name(),
+                "Unknown incident"
+            );
         }
     }
 
