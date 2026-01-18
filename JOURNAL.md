@@ -130,3 +130,4 @@ This document keeps track of activities carried out during the development of th
 - Add `IncidentClassifier` interface and `LlmIncidentClassifier` that implements it
 - Add `incident_classifications` table
 - Add incident classification model and repository
+- Add incident classification logic to the workflow processor
