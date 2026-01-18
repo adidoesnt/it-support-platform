@@ -128,3 +128,4 @@ This document keeps track of activities carried out during the development of th
 - Mark workflow runs as failed when there is an error and roll back the transaction (done automatically when wrapped in "Transactional" and error is thrown)
 - Add `LLMClient` interface and `OllamaClient` that implements it
 - Add `IncidentClassifier` interface and `LlmIncidentClassifier` that implements it
+- Add `incident_classifications` table
