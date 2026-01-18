@@ -2,10 +2,11 @@ package com.adityabanerjee.worker.sqs;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -17,7 +18,10 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
 
 @Component
-public class WorkflowConsumer implements ApplicationRunner {
+public class WorkflowConsumer implements SmartLifecycle {
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private volatile boolean isRunning = false;
+
     private final QueueResolver queueResolver;
     private final SqsClient sqsClient;
     private final WorkflowProcessor workflowProcessor;
@@ -39,17 +43,22 @@ public class WorkflowConsumer implements ApplicationRunner {
     }
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
-        String queueUrl = queueResolver.getQueueUrl();
-        System.out.println(String.format("Fetched queue URL: %s", queueUrl));
+    public void start() {
+        System.out.println("Starting workflow consumer...");
+        isRunning = true;
+        executor.submit(() -> loop(queueResolver.getQueueUrl()));
+    }
 
-        // Background thread for consumption
-        // Allows clean boot of the application
-        Thread consumerThread = new Thread(() -> loop(queueUrl), "workflow-consumer");
-        consumerThread.setDaemon(true); // This ensures the thread does not block the application from shutting down
-        consumerThread.start();
+    @Override
+    public void stop() {
+        System.out.println("Stopping workflow consumer...");
+        isRunning = false;
+        executor.shutdownNow();
+    }
 
-        System.out.println("Workflow consumer thread started");
+    @Override
+    public boolean isRunning() {
+        return isRunning;
     }
 
     private void loop(String queueUrl) {
@@ -60,7 +69,7 @@ public class WorkflowConsumer implements ApplicationRunner {
                 .visibilityTimeout(visibilityTimeoutSeconds)
                 .build();
 
-        while (true) {
+        while (isRunning) {
             System.out.println(String.format("Polling for messages on queue %s", queueUrl));
             try {
                 ReceiveMessageResponse receiveMessageResponse = sqsClient.receiveMessage(receiveMessageRequest);

@@ -122,3 +122,4 @@ This document keeps track of activities carried out during the development of th
 - Added `WorkflowConsumer` which calls the `WorkflowProcessor`:
   - Currently only handles the payload validation stage
   - Just to prove the architecture is working first, after which we will handle other stages
+- Changed `WorkflowConsumer` to use Smart Lifecycle to enable long-running processing
