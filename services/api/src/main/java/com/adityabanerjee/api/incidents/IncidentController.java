@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.math.BigInteger;
 import java.util.Optional;
@@ -18,8 +21,8 @@ import com.adityabanerjee.api.idempotencyKeys.IdempotencyKey;
 import com.adityabanerjee.api.workflowRuns.WorkflowRunRepository;
 import com.adityabanerjee.api.workflowRuns.WorkflowRun;
 import com.adityabanerjee.api.workflowRuns.WorkflowStep;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.adityabanerjee.api.workflowRuns.WorkflowStatus;
+import com.adityabanerjee.api.metrics.Metric;
 
 import jakarta.servlet.http.HttpServletRequest;
 import com.adityabanerjee.api.sqs.WorkflowEnqueuer;
@@ -31,21 +34,30 @@ public class IncidentController {
     private final IdempotencyKeyRepository idempotencyKeyRepository;
     private final WorkflowRunRepository workflowRunRepository;
     private final WorkflowEnqueuer workflowEnqueuer;
+    private final Counter incidentsReceived;
 
     public IncidentController(IncidentRepository incidentRepository,
             IdempotencyKeyRepository idempotencyKeyRepository,
             WorkflowRunRepository workflowRunRepository,
-            WorkflowEnqueuer workflowEnqueuer) {
+            WorkflowEnqueuer workflowEnqueuer,
+            MeterRegistry meterRegistry) {
         this.incidentRepository = incidentRepository;
         this.idempotencyKeyRepository = idempotencyKeyRepository;
         this.workflowRunRepository = workflowRunRepository;
         this.workflowEnqueuer = workflowEnqueuer;
+        this.incidentsReceived = Counter
+                .builder(Metric.INCIDENTS_RECEIVED.getValue())
+                .description("Total reported incidents")
+                .register(meterRegistry);
     }
 
     @PostMapping
     @Transactional
     public ResponseEntity<CreateIncidentResponse> createIncident(@RequestBody Incident incident,
             HttpServletRequest request) {
+        // Increment the incidents received counter
+        incidentsReceived.increment();
+
         // Check for idempotency (using the idempotency key header)
         String idempotencyKey = request.getHeader("Idempotency-Key");
         System.out.println(String.format("Idempotency key: %s", idempotencyKey));

@@ -143,3 +143,4 @@ This document keeps track of activities carried out during the development of th
 - Add `tickets` table
 - Implement logic for ticket creation
 - Add prometheus and grafana and connect them
+- Start tracking incidents received metrics
