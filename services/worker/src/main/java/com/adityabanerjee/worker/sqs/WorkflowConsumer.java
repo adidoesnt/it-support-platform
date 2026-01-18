@@ -15,6 +15,8 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
 
 @Component
@@ -96,9 +98,9 @@ public class WorkflowConsumer implements SmartLifecycle {
             WorkflowMessageBody workflowMessageBody = WorkflowMessageBody.fromJson(messageBody);
 
             BigInteger workflowRunId = workflowMessageBody.workflowRunId();
-            boolean success = workflowProcessor.processWorkflowRunById(workflowRunId);
+            StepResult stepResult = workflowProcessor.processWorkflowRunById(workflowRunId);
 
-            if (success) {
+            if (stepResult.deleteMessage()) {
                 System.out.println(
                         String.format("Successfully processed workflow run %s, deleting message", workflowRunId));
                 try {
@@ -108,6 +110,12 @@ public class WorkflowConsumer implements SmartLifecycle {
                 }
             } else {
                 System.out.println(String.format("Error processing workflow run %s, leaving for retry", workflowRunId));
+            }
+
+            if (stepResult.enqueueNext()) {
+                System.out.println(
+                        String.format("Successfully processed workflow run %s, enqueuing next step", workflowRunId));
+                enqueueNext(queueUrl, workflowRunId);
             }
         } catch (JsonProcessingException e) {
             System.out.println(String.format("Error parsing message body: %s", e.getMessage()));
@@ -130,6 +138,24 @@ public class WorkflowConsumer implements SmartLifecycle {
             sqsClient.deleteMessage(deleteMessageRequest);
         } catch (Exception e) {
             System.out.println(String.format("Error deleting message: %s", e.getMessage()));
+        }
+    }
+
+    private void enqueueNext(String queueUrl, BigInteger workflowRunId) {
+        try {
+            WorkflowMessageBody workflowMessageBody = new WorkflowMessageBody(workflowRunId);
+            String workflowMessageBodyJson = workflowMessageBody.toJson();
+
+            SendMessageRequest sendMessageRequest = SendMessageRequest.builder()
+                    .queueUrl(queueUrl)
+                    .messageBody(workflowMessageBodyJson)
+                    .build();
+
+            SendMessageResponse sendMessageResponse = sqsClient.sendMessage(sendMessageRequest);
+            System.out.println(String.format("Enqueued next step for workflow run %s to queue %s with message id %s",
+                    workflowRunId, queueUrl, sendMessageResponse.messageId()));
+        } catch (Exception e) {
+            System.out.println(String.format("Error enqueuing next step: %s", e.getMessage()));
         }
     }
 }
