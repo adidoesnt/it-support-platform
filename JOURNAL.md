@@ -117,3 +117,4 @@ This document keeps track of activities carried out during the development of th
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   ```
 - Added `WorkflowStep` and `WorkflowStatus` enums to `worker`
+- Added `WorkflowRun` type and `WorkflowRunRepository` to `worker`
