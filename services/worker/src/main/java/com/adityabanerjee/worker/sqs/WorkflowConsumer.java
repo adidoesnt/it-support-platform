@@ -96,7 +96,7 @@ public class WorkflowConsumer implements SmartLifecycle {
             WorkflowMessageBody workflowMessageBody = WorkflowMessageBody.fromJson(messageBody);
 
             BigInteger workflowRunId = workflowMessageBody.workflowRunId();
-            boolean success = workflowProcessor.processPayloadValidation(workflowRunId);
+            boolean success = workflowProcessor.processWorkflowRunById(workflowRunId);
 
             if (success) {
                 System.out.println(

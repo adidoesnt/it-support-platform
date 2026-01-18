@@ -123,3 +123,4 @@ This document keeps track of activities carried out during the development of th
   - Currently only handles the payload validation stage
   - Just to prove the architecture is working first, after which we will handle other stages
 - Changed `WorkflowConsumer` to use Smart Lifecycle to enable long-running processing
+- Add general dispatcher to `WorkflowProcessor` class with placeholder handler based on workflow step

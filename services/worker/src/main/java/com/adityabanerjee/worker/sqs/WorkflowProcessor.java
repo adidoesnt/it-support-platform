@@ -22,7 +22,7 @@ public class WorkflowProcessor {
     }
 
     @Transactional
-    public boolean processPayloadValidation(BigInteger workflowRunId) {
+    public boolean processWorkflowRunById(BigInteger workflowRunId) {
         try {
             Optional<WorkflowRun> workflowRunOpt = workflowRunRepository.findById(workflowRunId);
 
@@ -46,26 +46,21 @@ public class WorkflowProcessor {
             }
 
             WorkflowStep workflowRunStep = workflowRun.currentStep();
-            if (workflowRunStep != WorkflowStep.PAYLOAD_VALIDATION) {
-                System.out.println(String.format(
-                        "[WARNING] Workflow run %s invalid step, expected %s but got %s", workflowRunId,
-                        WorkflowStep.PAYLOAD_VALIDATION, workflowRunStep));
-                // The workflow run is not in the payload validation step -> nothing to do
-                // Just delete the message
-                return true;
+            switch (workflowRunStep) {
+                case PAYLOAD_VALIDATION:
+                    return processPayloadValidation(workflowRun);
+                case INCIDENT_CLASSIFICATION:
+                    return processIncidentClassification(workflowRun);
+                case TICKET_CREATION:
+                    return processTicketCreation(workflowRun);
+                default:
+                    System.out.println(String.format(
+                            "[WARNING] Workflow run %s invalid step, expected %s but got %s", workflowRunId,
+                            WorkflowStep.PAYLOAD_VALIDATION, workflowRunStep));
+                    // The workflow run is not in the payload validation step -> nothing to do
+                    // Just delete the message
+                    return true;
             }
-
-            // Now we have validated the workflow run status and step, we can proceed
-            WorkflowRun updatedWorkflowRun = new WorkflowRun(
-                    workflowRun.id(), // Passing the same id to update the workflow run
-                    workflowRun.incidentId(),
-                    WorkflowStep.INCIDENT_CLASSIFICATION,
-                    WorkflowStatus.IN_PROGRESS,
-                    workflowRun.createdAt(),
-                    LocalDateTime.now());
-
-            workflowRunRepository.save(updatedWorkflowRun);
-            return true; // Successfully processed the payload validation
         } catch (Exception e) {
             System.out.println(String.format("Error processing payload validation for workflow run %s: %s",
                     workflowRunId, e.getMessage()));
@@ -73,6 +68,36 @@ public class WorkflowProcessor {
                     "Rolling back transaction for error processing payload validation for workflow run %s: %s",
                     workflowRunId, e.getMessage()));
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+    }
+
+    private boolean processPayloadValidation(WorkflowRun workflowRun) {
+        try {
+            return true;
+        } catch (Exception e) {
+            System.out.println(String.format("Error processing payload validation for workflow run %s: %s",
+                    workflowRun.id(), e.getMessage()));
+            return false;
+        }
+    }
+
+    private boolean processIncidentClassification(WorkflowRun workflowRun) {
+        try {
+            return true;
+        } catch (Exception e) {
+            System.out.println(String.format("Error processing incident classification for workflow run %s: %s",
+                    workflowRun.id(), e.getMessage()));
+            return false;
+        }
+    }
+
+    private boolean processTicketCreation(WorkflowRun workflowRun) {
+        try {
+            return true;
+        } catch (Exception e) {
+            System.out.println(String.format("Error processing ticket creation for workflow run %s: %s",
+                    workflowRun.id(), e.getMessage()));
             return false;
         }
     }
