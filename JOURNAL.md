@@ -118,3 +118,4 @@ This document keeps track of activities carried out during the development of th
   ```
 - Added `WorkflowStep` and `WorkflowStatus` enums to `worker`
 - Added `WorkflowRun` type and `WorkflowRunRepository` to `worker`
+- Create `WorkflowProcessor` class (currently only handles payload validation stage)
