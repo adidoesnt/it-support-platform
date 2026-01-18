@@ -9,6 +9,9 @@ import com.adityabanerjee.worker.classifier.IncidentClassifier;
 import com.adityabanerjee.worker.classifier.ClassificationResult;
 import com.adityabanerjee.worker.incidents.Incident;
 import com.adityabanerjee.worker.incidents.IncidentRepository;
+import com.adityabanerjee.worker.tickets.Ticket;
+import com.adityabanerjee.worker.tickets.TicketStatus;
+import com.adityabanerjee.worker.tickets.TicketRepository;
 import com.adityabanerjee.worker.workflowRuns.WorkflowRun;
 import com.adityabanerjee.worker.workflowRuns.WorkflowRunRepository;
 import com.adityabanerjee.worker.workflowRuns.WorkflowStatus;
@@ -25,17 +28,20 @@ public class WorkflowProcessor {
     private final IncidentClassificationRepository incidentClassificationRepository;
     private final IncidentClassifier incidentClassifier;
     private final IncidentRepository incidentRepository;
+    private final TicketRepository ticketRepository;
 
     public WorkflowProcessor(WorkflowRunRepository workflowRunRepository,
             IncidentClassificationRepository incidentClassificationRepository,
             IncidentClassifier incidentClassifier,
             IncidentRepository incidentRepository,
-            WorkflowFailureService workflowFailureService) {
+            WorkflowFailureService workflowFailureService,
+            TicketRepository ticketRepository) {
         this.workflowRunRepository = workflowRunRepository;
         this.incidentClassificationRepository = incidentClassificationRepository;
         this.incidentClassifier = incidentClassifier;
         this.workflowFailureService = workflowFailureService;
         this.incidentRepository = incidentRepository;
+        this.ticketRepository = ticketRepository;
     }
 
     @Transactional
@@ -176,7 +182,25 @@ public class WorkflowProcessor {
     private StepResult processTicketCreation(WorkflowRun workflowRun) {
         System.out.println(String.format("Processing ticket creation for workflow run %s", workflowRun.id()));
 
-        // TODO: Implement ticket creation
+        Incident incident = incidentRepository.findById(workflowRun.incidentId()).orElseThrow(
+                () -> new RuntimeException(String.format("Incident %s not found", workflowRun.incidentId())));
+        IncidentClassification incidentClassification = incidentClassificationRepository
+                .findByWorkflowRunId(workflowRun.id()).orElseThrow(
+                        () -> new RuntimeException(
+                                String.format("Incident classification %s not found", workflowRun.id())));
+
+        String ticketTitle = String.format("[%s] [%s] %s", incidentClassification.priority(),
+                incidentClassification.category(), incidentClassification.summary());
+        Ticket ticket = new Ticket(
+                null,
+                workflowRun.incidentId(),
+                workflowRun.id(),
+                ticketTitle,
+                incident.description(),
+                TicketStatus.OPEN,
+                LocalDateTime.now(),
+                LocalDateTime.now());
+        ticketRepository.save(ticket);
 
         // Update the workflow status to completed
         WorkflowRun updatedStepWorkflowRun = new WorkflowRun(
@@ -188,6 +212,7 @@ public class WorkflowProcessor {
                 workflowRun.updatedAt());
         workflowRunRepository.save(updatedStepWorkflowRun);
 
-        return new StepResult(true, true);
+        // This is the last step, so we don't enqueue the next step
+        return new StepResult(true, false);
     }
 }

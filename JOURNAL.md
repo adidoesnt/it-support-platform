@@ -141,3 +141,4 @@ This document keeps track of activities carried out during the development of th
       active: local
   ```
 - Add `tickets` table
+- Implement logic for ticket creation
