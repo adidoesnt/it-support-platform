@@ -53,11 +53,10 @@ public class WorkflowProcessor {
             WorkflowRun workflowRun = workflowRunOpt.get();
             WorkflowStatus workflowRunStatus = workflowRun.status();
 
-            if (workflowRunStatus != WorkflowStatus.PENDING) {
+            if (workflowRunStatus == WorkflowStatus.COMPLETED || workflowRunStatus == WorkflowStatus.FAILED) {
                 System.out.println(String.format(
-                        "[WARNING] Workflow run %s invalid status, expected %s but got %s", workflowRunId,
-                        WorkflowStatus.PENDING, workflowRunStatus));
-                // The workflow run is not in the pending status -> nothing to do
+                        "[WARNING] Workflow run %s already completed or failed, skipping", workflowRunId));
+                // The workflow run is already completed or failed -> nothing to do
                 // Just delete the message
                 return new StepResult(true, false);
             }
