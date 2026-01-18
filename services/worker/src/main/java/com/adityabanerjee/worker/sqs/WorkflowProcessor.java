@@ -2,6 +2,9 @@ package com.adityabanerjee.worker.sqs;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 
 import com.adityabanerjee.worker.classifier.IncidentClassification;
 import com.adityabanerjee.worker.classifier.IncidentClassificationRepository;
@@ -16,6 +19,7 @@ import com.adityabanerjee.worker.workflowRuns.WorkflowRun;
 import com.adityabanerjee.worker.workflowRuns.WorkflowRunRepository;
 import com.adityabanerjee.worker.workflowRuns.WorkflowStatus;
 import com.adityabanerjee.worker.workflowRuns.WorkflowStep;
+import com.adityabanerjee.worker.metrics.Metric;
 
 import java.math.BigInteger;
 import java.time.LocalDateTime;
@@ -30,67 +34,105 @@ public class WorkflowProcessor {
     private final IncidentRepository incidentRepository;
     private final TicketRepository ticketRepository;
 
+    // Metrics
+    private final Timer workflowStepDuration;
+    private final MeterRegistry meterRegistry;
+
     public WorkflowProcessor(WorkflowRunRepository workflowRunRepository,
             IncidentClassificationRepository incidentClassificationRepository,
             IncidentClassifier incidentClassifier,
             IncidentRepository incidentRepository,
             WorkflowFailureService workflowFailureService,
-            TicketRepository ticketRepository) {
+            TicketRepository ticketRepository,
+            MeterRegistry meterRegistry) {
         this.workflowRunRepository = workflowRunRepository;
         this.incidentClassificationRepository = incidentClassificationRepository;
         this.incidentClassifier = incidentClassifier;
         this.workflowFailureService = workflowFailureService;
         this.incidentRepository = incidentRepository;
         this.ticketRepository = ticketRepository;
+
+        // Metrics
+        this.meterRegistry = meterRegistry;
+        this.workflowStepDuration = Timer.builder(Metric.WORKFLOW_STEP_DURATION.getValue())
+                .description("Duration of workflow step processing")
+                .publishPercentileHistogram()
+                .register(meterRegistry);
+    }
+
+    private void incrementWorkflowStepFailures(String step) {
+        Counter.builder(Metric.WORKFLOW_STEP_FAILURES.getValue())
+                .description("Total workflow step failures")
+                .tag("step", step)
+                .register(meterRegistry)
+                .increment();
+    }
+
+    private void incrementWorkflowStepSuccesses(String step) {
+        Counter.builder(Metric.WORKFLOW_STEP_SUCCESS.getValue())
+                .description("Total workflow step successes")
+                .tag("step", step)
+                .register(meterRegistry)
+                .increment();
     }
 
     @Transactional
     public StepResult processWorkflowRunById(BigInteger workflowRunId) {
+        Optional<WorkflowRun> workflowRunOpt = workflowRunRepository.findById(workflowRunId);
+
+        if (workflowRunOpt.isEmpty()) {
+            System.out.println(String.format("[WARNING] Workflow run %s not found, skipping", workflowRunId));
+            // The workflow run is not found -> nothing to do
+            // Just delete the message
+            return new StepResult(true, false);
+        }
+
+        WorkflowRun workflowRun = workflowRunOpt.get();
+        WorkflowStatus workflowRunStatus = workflowRun.status();
+
+        if (workflowRunStatus == WorkflowStatus.COMPLETED || workflowRunStatus == WorkflowStatus.FAILED) {
+            System.out.println(String.format(
+                    "[WARNING] Workflow run %s already completed or failed, skipping", workflowRunId));
+            // The workflow run is already completed or failed -> nothing to do
+            // Just delete the message
+            return new StepResult(true, false);
+        }
+
+        WorkflowStep workflowRunStep = workflowRun.currentStep();
+
         try {
-            Optional<WorkflowRun> workflowRunOpt = workflowRunRepository.findById(workflowRunId);
+            return workflowStepDuration.record(() -> {
+                StepResult stepResult = switch (workflowRunStep) {
+                    case PAYLOAD_VALIDATION -> processPayloadValidation(workflowRun);
+                    case INCIDENT_CLASSIFICATION -> processIncidentClassification(workflowRun);
+                    case TICKET_CREATION -> processTicketCreation(workflowRun);
+                    default -> {
+                        System.out.println(String.format(
+                                "[WARNING] Workflow run %s invalid step, expected %s but got %s",
+                                workflowRunId,
+                                WorkflowStep.PAYLOAD_VALIDATION,
+                                workflowRunStep));
+                        // The workflow run is not in the payload validation step -> nothing to do
+                        // Just delete the message
+                        yield new StepResult(true, false);
+                    }
+                };
 
-            if (workflowRunOpt.isEmpty()) {
-                System.out.println(String.format("[WARNING] Workflow run %s not found, skipping", workflowRunId));
-                // The workflow run is not found -> nothing to do
-                // Just delete the message
-                return new StepResult(true, false);
-            }
+                incrementWorkflowStepSuccesses(workflowRunStep.getValue());
 
-            WorkflowRun workflowRun = workflowRunOpt.get();
-            WorkflowStatus workflowRunStatus = workflowRun.status();
-
-            if (workflowRunStatus == WorkflowStatus.COMPLETED || workflowRunStatus == WorkflowStatus.FAILED) {
-                System.out.println(String.format(
-                        "[WARNING] Workflow run %s already completed or failed, skipping", workflowRunId));
-                // The workflow run is already completed or failed -> nothing to do
-                // Just delete the message
-                return new StepResult(true, false);
-            }
-
-            WorkflowStep workflowRunStep = workflowRun.currentStep();
-            StepResult stepResult = switch (workflowRunStep) {
-                case PAYLOAD_VALIDATION -> processPayloadValidation(workflowRun);
-                case INCIDENT_CLASSIFICATION -> processIncidentClassification(workflowRun);
-                case TICKET_CREATION -> processTicketCreation(workflowRun);
-                default -> {
-                    System.out.println(String.format(
-                            "[WARNING] Workflow run %s invalid step, expected %s but got %s", workflowRunId,
-                            WorkflowStep.PAYLOAD_VALIDATION, workflowRunStep));
-                    // The workflow run is not in the payload validation step -> nothing to do
-                    // Just delete the message
-                    yield new StepResult(true, false);
-                }
-            };
-
-            return stepResult;
+                return stepResult;
+            });
         } catch (Exception e) {
             System.out.println(String.format("Error processing message for workflow run %s: %s",
                     workflowRunId, e.getMessage()));
 
+            incrementWorkflowStepFailures(workflowRunStep.getValue());
+
             try {
                 workflowFailureService.markWorkflowRunAsFailed(workflowRunId);
             } catch (Exception ignored) {
-                System.out.println(String.format("Error marking workflow run %s as failed: %s", workflowRunId,
+                System.out.println(String.format("Error marking workflow run %s as failed: %s",
+                        workflowRunId,
                         ignored.getMessage()));
             }
 
@@ -117,8 +159,7 @@ public class WorkflowProcessor {
         // the DB
         // As such, there is nothing to do here
 
-        // Update the workflow run status to in progress and step to incident
-        // classification
+        // Update the workflow run status to in progress and step to incident classification
         WorkflowRun updatedStepWorkflowRun = new WorkflowRun(
                 updatedStatusWorkflowRun.id(),
                 updatedStatusWorkflowRun.incidentId(),
@@ -132,14 +173,14 @@ public class WorkflowProcessor {
     }
 
     private StepResult processIncidentClassification(WorkflowRun workflowRun) {
-        System.out
-                .println(String.format("Processing incident classification for workflow run %s", workflowRun.id()));
+        System.out.println(String.format("Processing incident classification for workflow run %s", workflowRun.id()));
 
         // Check for an existing incident classification
         Optional<IncidentClassification> incidentClassificationOpt = incidentClassificationRepository
                 .findByWorkflowRunId(workflowRun.id());
         if (incidentClassificationOpt.isPresent()) {
-            System.out.println(String.format("Incident classification already exists for workflow run %s, skipping",
+            System.out.println(String.format(
+                    "Incident classification already exists for workflow run %s, skipping",
                     workflowRun.id()));
             // The incident classification already exists -> nothing to do
             // Just delete the message
@@ -148,7 +189,8 @@ public class WorkflowProcessor {
 
         // Classify the incident
         Incident incident = incidentRepository.findById(workflowRun.incidentId()).orElseThrow(
-                () -> new RuntimeException(String.format("Incident %s not found", workflowRun.incidentId())));
+                () -> new RuntimeException(
+                        String.format("Incident %s not found", workflowRun.incidentId())));
         ClassificationResult classificationResult = incidentClassifier.classifyIncident(incident.description());
 
         // Save the incident classification
@@ -183,14 +225,17 @@ public class WorkflowProcessor {
         System.out.println(String.format("Processing ticket creation for workflow run %s", workflowRun.id()));
 
         Incident incident = incidentRepository.findById(workflowRun.incidentId()).orElseThrow(
-                () -> new RuntimeException(String.format("Incident %s not found", workflowRun.incidentId())));
+                () -> new RuntimeException(
+                        String.format("Incident %s not found", workflowRun.incidentId())));
         IncidentClassification incidentClassification = incidentClassificationRepository
                 .findByWorkflowRunId(workflowRun.id()).orElseThrow(
                         () -> new RuntimeException(
                                 String.format("Incident classification %s not found", workflowRun.id())));
 
-        String ticketTitle = String.format("[%s] [%s] %s", incidentClassification.priority(),
-                incidentClassification.category(), incidentClassification.summary());
+        String ticketTitle = String.format("[%s] [%s] %s",
+                incidentClassification.priority(),
+                incidentClassification.category(),
+                incidentClassification.summary());
         Ticket ticket = new Ticket(
                 null,
                 workflowRun.incidentId(),

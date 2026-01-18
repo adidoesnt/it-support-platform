@@ -3,6 +3,8 @@ package com.adityabanerjee.api.incidents;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.math.BigInteger;
 import java.util.Optional;
@@ -108,16 +109,20 @@ public class IncidentController {
                     .orElseThrow();
         }
 
-        // Enqueue the workflow run
-        try {
-            workflowEnqueuer.enqueueWorkflow(savedWorkflowRun.id());
-        } catch (JsonProcessingException e) {
-            System.out.println(String.format("Invalid JSON for workflow message body: %s", e.getMessage()));
-            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            System.out.println(String.format("Rolling back transaction for invalid JSON for workflow message body: %s",
-                    e.getMessage()));
-            return ResponseEntity.internalServerError().build();
-        }
+        // Enqueue only after the transaction commits to avoid race conditions
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    workflowEnqueuer.enqueueWorkflow(savedWorkflowRun.id());
+                } catch (Exception e) {
+                    System.out.println(String.format(
+                            "Failed to enqueue workflow run %s after commit: %s",
+                            savedWorkflowRun.id(),
+                            e.getMessage()));
+                }
+            }
+        });
 
         return ResponseEntity.ok(new CreateIncidentResponse(savedWorkflowRun.id()));
     }
