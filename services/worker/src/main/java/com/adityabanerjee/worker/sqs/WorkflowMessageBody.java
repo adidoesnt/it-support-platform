@@ -11,4 +11,8 @@ public record WorkflowMessageBody(BigInteger workflowRunId) {
     public String toJson() throws JsonProcessingException {
         return objectMapper.writeValueAsString(this);
     }
+
+    public static WorkflowMessageBody fromJson(String json) throws JsonProcessingException {
+        return objectMapper.readValue(json, WorkflowMessageBody.class);
+    }
 }

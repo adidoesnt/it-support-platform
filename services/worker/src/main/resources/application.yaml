@@ -14,3 +14,9 @@ aws:
   sqs:
     endpoint: http://localhost:4567
     queue-name: incident-workflow
+
+worker:
+  sqs:
+    maxMessages: 10
+    waitSeconds: 10
+    visibilityTimeoutSeconds: 30
