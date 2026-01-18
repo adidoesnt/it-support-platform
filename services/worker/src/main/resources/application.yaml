@@ -2,6 +2,9 @@ spring:
   application:
     name: worker
 
+  profiles:
+    active: local
+
   datasource:
     url: jdbc:postgresql://localhost:5434/it_support_platform
     username: postgres

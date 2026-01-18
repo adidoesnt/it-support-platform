@@ -131,3 +131,12 @@ This document keeps track of activities carried out during the development of th
 - Add `incident_classifications` table
 - Add incident classification model and repository
 - Add incident classification logic to the workflow processor
+- Fix spring profile config:
+  ```yaml
+  # application.yaml
+  spring:
+    ... other config
+
+    profiles:
+      active: local
+  ```
