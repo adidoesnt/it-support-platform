@@ -8,11 +8,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Component
 public class LlmIncidentClassifier implements IncidentClassifier {
     private final LlmClient llmClient;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public LlmIncidentClassifier(LlmClient llmClient, ObjectMapper objectMapper) {
+    public LlmIncidentClassifier(LlmClient llmClient) {
         this.llmClient = llmClient;
-        this.objectMapper = objectMapper;
     }
 
     private String extractFirstJsonObject(String text) {

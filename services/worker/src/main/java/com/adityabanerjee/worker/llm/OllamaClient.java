@@ -24,14 +24,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class OllamaClient implements LlmClient {
     private final String baseUrl;
     private final String model;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
 
     public OllamaClient(@Value("${worker.llm.ollama.baseUrl}") String baseUrl,
-            @Value("${worker.llm.ollama.model}") String model, ObjectMapper objectMapper) {
+            @Value("${worker.llm.ollama.model}") String model) {
         this.baseUrl = baseUrl;
         this.model = model;
-        this.objectMapper = objectMapper;
     }
 
     @Override

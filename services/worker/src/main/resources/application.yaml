@@ -1,9 +1,12 @@
 spring:
+  main:
+    web-application-type: none  # Disable Spring Boot's default web application type
+
   application:
     name: worker
 
   profiles:
-    active: local
+    active: local  # Set the active profile to local
 
   datasource:
     url: jdbc:postgresql://localhost:5434/it_support_platform
