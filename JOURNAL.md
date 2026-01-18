@@ -126,3 +126,4 @@ This document keeps track of activities carried out during the development of th
 - Add general dispatcher to `WorkflowProcessor` class with placeholder handler based on workflow step
 - Add placeholders for processing and update states for workflow in handlers
 - Mark workflow runs as failed when there is an error and roll back the transaction (done automatically when wrapped in "Transactional" and error is thrown)
+- Add LLMClient interface and OllamaClient that implements it
