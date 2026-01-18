@@ -20,6 +20,20 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
+
+	// Database
+	implementation 'org.springframework.data:spring-data-relational'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+
+	// AWS
+	implementation(platform("software.amazon.awssdk:bom:2.27.21"))
+	implementation 'software.amazon.awssdk:sqs'
+
+	// Database (Runtime)
+	runtimeOnly 'org.postgresql:postgresql'
+
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
