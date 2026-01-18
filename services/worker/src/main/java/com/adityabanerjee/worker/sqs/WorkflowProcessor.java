@@ -1,7 +1,6 @@
 package com.adityabanerjee.worker.sqs;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.adityabanerjee.worker.workflowRuns.WorkflowRun;
@@ -15,9 +14,12 @@ import java.util.Optional;
 @Service
 public class WorkflowProcessor {
     private final WorkflowRunRepository workflowRunRepository;
+    private final WorkflowFailureService workflowFailureService;
 
-    public WorkflowProcessor(WorkflowRunRepository workflowRunRepository) {
+    public WorkflowProcessor(WorkflowRunRepository workflowRunRepository,
+            WorkflowFailureService workflowFailureService) {
         this.workflowRunRepository = workflowRunRepository;
+        this.workflowFailureService = workflowFailureService;
     }
 
     @Transactional
@@ -61,100 +63,89 @@ public class WorkflowProcessor {
 
             return stepResult;
         } catch (Exception e) {
-            System.out.println(String.format("Error processing payload validation for workflow run %s: %s",
+            System.out.println(String.format("Error processing message for workflow run %s: %s",
                     workflowRunId, e.getMessage()));
-            System.out.println(String.format(
-                    "Rolling back transaction for error processing payload validation for workflow run %s: %s",
-                    workflowRunId, e.getMessage()));
-            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            return new StepResult(true, false);
+
+            try {
+                workflowFailureService.markWorkflowRunAsFailed(workflowRunId);
+            } catch (Exception ignored) {
+                System.out.println(String.format("Error marking workflow run %s as failed: %s", workflowRunId,
+                        ignored.getMessage()));
+            }
+
+            // Re-throw so that "Transactional" rolls back the transaction
+            throw e;
         }
     }
 
     private StepResult processPayloadValidation(WorkflowRun workflowRun) {
-        try {
-            System.out.println(String.format("Processing payload validation for workflow run %s", workflowRun.id()));
+        System.out.println(String.format("Processing payload validation for workflow run %s", workflowRun.id()));
 
-            // Update the workflow run status to in progress
-            WorkflowRun updatedStatusWorkflowRun = new WorkflowRun(
-                    workflowRun.id(),
-                    workflowRun.incidentId(),
-                    workflowRun.currentStep(),
-                    WorkflowStatus.IN_PROGRESS, // Only update the status
-                    workflowRun.createdAt(),
-                    workflowRun.updatedAt());
-            workflowRunRepository.save(updatedStatusWorkflowRun);
+        // Update the workflow run status to in progress
+        WorkflowRun updatedStatusWorkflowRun = new WorkflowRun(
+                workflowRun.id(),
+                workflowRun.incidentId(),
+                workflowRun.currentStep(),
+                WorkflowStatus.IN_PROGRESS, // Only update the status
+                workflowRun.createdAt(),
+                workflowRun.updatedAt());
+        workflowRunRepository.save(updatedStatusWorkflowRun);
 
-            // TODO: Implement payload validation
-            // For now, we only have the workflow ID and we get the corresponding data from
-            // the DB
-            // As such, there is nothing to do here
+        // TODO: Implement payload validation
+        // For now, we only have the workflow ID and we get the corresponding data from
+        // the DB
+        // As such, there is nothing to do here
 
-            // Update the workflow run status to in progress and step to incident
-            // classification
-            WorkflowRun updatedStepWorkflowRun = new WorkflowRun(
-                    updatedStatusWorkflowRun.id(),
-                    updatedStatusWorkflowRun.incidentId(),
-                    WorkflowStep.INCIDENT_CLASSIFICATION, // Only update the step, keep the status
-                    updatedStatusWorkflowRun.status(),
-                    updatedStatusWorkflowRun.createdAt(),
-                    updatedStatusWorkflowRun.updatedAt());
-            workflowRunRepository.save(updatedStepWorkflowRun);
+        // Update the workflow run status to in progress and step to incident
+        // classification
+        WorkflowRun updatedStepWorkflowRun = new WorkflowRun(
+                updatedStatusWorkflowRun.id(),
+                updatedStatusWorkflowRun.incidentId(),
+                WorkflowStep.INCIDENT_CLASSIFICATION, // Only update the step, keep the status
+                updatedStatusWorkflowRun.status(),
+                updatedStatusWorkflowRun.createdAt(),
+                updatedStatusWorkflowRun.updatedAt());
+        workflowRunRepository.save(updatedStepWorkflowRun);
 
-            return new StepResult(true, true);
-        } catch (Exception e) {
-            System.out.println(String.format("Error processing payload validation for workflow run %s: %s",
-                    workflowRun.id(), e.getMessage()));
-            return new StepResult(true, false);
-        }
+        return new StepResult(true, true);
     }
 
     private StepResult processIncidentClassification(WorkflowRun workflowRun) {
-        try {
-            System.out
-                    .println(String.format("Processing incident classification for workflow run %s", workflowRun.id()));
+        System.out
+                .println(String.format("Processing incident classification for workflow run %s", workflowRun.id()));
 
-            // TODO: Implement incident classification
+        // TODO: Implement incident classification
 
-            // Update the workflow step to ticket creation
-            WorkflowRun updatedStepWorkflowRun = new WorkflowRun(
-                    workflowRun.id(),
-                    workflowRun.incidentId(),
-                    WorkflowStep.TICKET_CREATION,
-                    workflowRun.status(),
-                    workflowRun.createdAt(),
-                    workflowRun.updatedAt());
-            workflowRunRepository.save(updatedStepWorkflowRun);
+        // Update the workflow step to ticket creation
+        WorkflowRun updatedStepWorkflowRun = new WorkflowRun(
+                workflowRun.id(),
+                workflowRun.incidentId(),
+                WorkflowStep.TICKET_CREATION,
+                workflowRun.status(),
+                workflowRun.createdAt(),
+                workflowRun.updatedAt());
+        workflowRunRepository.save(updatedStepWorkflowRun);
 
-            return new StepResult(true, true);
-        } catch (Exception e) {
-            System.out.println(String.format("Error processing incident classification for workflow run %s: %s",
-                    workflowRun.id(), e.getMessage()));
-            return new StepResult(true, false);
-        }
+        return new StepResult(true, true);
+
     }
 
     private StepResult processTicketCreation(WorkflowRun workflowRun) {
-        try {
-            System.out.println(String.format("Processing ticket creation for workflow run %s", workflowRun.id()));
+        System.out.println(String.format("Processing ticket creation for workflow run %s", workflowRun.id()));
 
-            // TODO: Implement ticket creation
+        // TODO: Implement ticket creation
 
-            // Update the workflow status to completed
-            WorkflowRun updatedStepWorkflowRun = new WorkflowRun(
-                    workflowRun.id(),
-                    workflowRun.incidentId(),
-                    workflowRun.currentStep(),
-                    WorkflowStatus.COMPLETED, // Only update the status
-                    workflowRun.createdAt(),
-                    workflowRun.updatedAt());
-            workflowRunRepository.save(updatedStepWorkflowRun);
+        // Update the workflow status to completed
+        WorkflowRun updatedStepWorkflowRun = new WorkflowRun(
+                workflowRun.id(),
+                workflowRun.incidentId(),
+                workflowRun.currentStep(),
+                WorkflowStatus.COMPLETED, // Only update the status
+                workflowRun.createdAt(),
+                workflowRun.updatedAt());
+        workflowRunRepository.save(updatedStepWorkflowRun);
 
-            return new StepResult(true, true);
-        } catch (Exception e) {
-            System.out.println(String.format("Error processing ticket creation for workflow run %s: %s",
-                    workflowRun.id(), e.getMessage()));
-            return new StepResult(true, false);
-        }
+        return new StepResult(true, true);
+
     }
 }
