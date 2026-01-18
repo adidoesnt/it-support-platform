@@ -110,3 +110,4 @@ This document keeps track of activities carried out during the development of th
       endpoint: http://localhost:4567
       queue-name: incident-workflow
   ```
+- Created `AwsSqsConfig` class in `worker`
