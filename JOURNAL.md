@@ -62,3 +62,51 @@ This document keeps track of activities carried out during the development of th
 - Create `AwsSqsConfig` class
 - Add `QueueResolver` class to get queue url based on localstack endpoint and queue name
 - Define workflow message body and add `WorkflowEnqueuer` class to send messages to the queue
+
+
+## 18-01-2026
+
+- Started working on the `worker` service
+- Added minimal dependencies for the worker:
+  ```
+  // build.gradle
+
+  ... other config
+
+  dependencies {
+    ... other dependencies
+
+    // Database
+    implementation 'org.springframework.data:spring-data-relational'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+
+    // AWS
+    implementation(platform("software.amazon.awssdk:bom:2.27.21"))
+    implementation 'software.amazon.awssdk:sqs'
+
+    // Database (Runtime)
+    runtimeOnly 'org.postgresql:postgresql'
+  }
+
+  ... other config
+  ```
+- Added minimal configuration to `application.yaml`
+  ```yaml
+  spring:
+    application:
+      name: worker
+
+    datasource:
+      url: jdbc:postgresql://localhost:5434/it_support_platform
+      username: postgres
+      password: postgres
+
+  aws:
+    region: eu-west-2
+    access-key: test
+    secret-key: test
+    sqs:
+      endpoint: http://localhost:4567
+      queue-name: incident-workflow
+  ```
