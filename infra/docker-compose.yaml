@@ -1,5 +1,3 @@
-# TODO: Add Grafana and Prometheus
-
 services:
   postgres:
     image: postgres:18
@@ -11,6 +9,27 @@ services:
       - POSTGRES_DB=it_support_platform
     volumes:
       - postgres_data:/var/lib/postgresql
+    networks:
+      - app-network
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     networks:
       - app-network
 
@@ -32,4 +51,6 @@ networks:
 
 volumes:
   postgres_data:
+  prometheus_data:
+  grafana_data:
   localstack_data:

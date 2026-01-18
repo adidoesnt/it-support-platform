@@ -21,6 +21,8 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	// Actuator (for Prometheus metrics)
   	implementation 'org.springframework.boot:spring-boot-starter-actuator'
   	implementation 'io.micrometer:micrometer-registry-prometheus'
 

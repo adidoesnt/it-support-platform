@@ -20,6 +20,11 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	// Actuator (for Prometheus metrics)
+  	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+  	implementation 'io.micrometer:micrometer-registry-prometheus'
 
 	// Database
 	implementation 'org.springframework.data:spring-data-relational'
@@ -35,9 +40,6 @@ dependencies {
 
 	// JSON
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
-
-	// HTTP
-	implementation 'org.springframework.boot:spring-boot-starter-web'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

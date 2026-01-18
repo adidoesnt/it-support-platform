@@ -1,7 +1,4 @@
 spring:
-  main:
-    web-application-type: none  # Disable Spring Boot's default web application type
-
   application:
     name: worker
 
@@ -12,6 +9,9 @@ spring:
     url: jdbc:postgresql://localhost:5434/it_support_platform
     username: postgres
     password: postgres
+
+server:
+  port: 8081
 
 aws:
   region: eu-west-2
@@ -30,3 +30,9 @@ worker:
     ollama:
       baseUrl: http://localhost:11434
       model: llama3.1:8b
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
