@@ -112,3 +112,7 @@ This document keeps track of activities carried out during the development of th
   ```
 - Created `AwsSqsConfig` class in `worker`
 - Created `QueueUrlResolver` class in `worker`
+- Created `WorkflowMessageBody` class in `worker`. Had to add the following dependency:
+  ```
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  ```
