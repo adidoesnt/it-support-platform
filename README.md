@@ -159,3 +159,77 @@ classDiagram
     LlmClient <|.. OllamaClient
     LlmClient <|.. OpenAiClient
 ```
+
+## Data Model
+
+### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    INCIDENTS ||--o{ WORKFLOW_RUNS : has
+    WORKFLOW_RUNS ||--o| INCIDENT_CLASSIFICATIONS : produces
+    WORKFLOW_RUNS ||--o| TICKETS : creates
+    WORKFLOW_RUNS ||--o{ IDEMPOTENCY_KEYS : keyed_by
+    INCIDENTS ||--o{ INCIDENT_CLASSIFICATIONS : classified_as
+    INCIDENTS ||--o{ TICKETS : has
+
+    INCIDENTS {
+      bigint id PK
+      text description
+      timestamp created_at
+      timestamp updated_at
+    }
+
+    WORKFLOW_RUNS {
+      bigint id PK
+      bigint incident_id FK
+      varchar current_step
+      varchar status
+      timestamp created_at
+      timestamp updated_at
+    }
+
+    IDEMPOTENCY_KEYS {
+      varchar key PK
+      bigint workflow_run_id FK
+      timestamp created_at
+      timestamp updated_at
+    }
+
+    INCIDENT_CLASSIFICATIONS {
+      bigint id PK
+      bigint workflow_run_id FK
+      bigint incident_id FK
+      varchar category
+      varchar priority
+      text summary
+      varchar model_provider
+      varchar model_name
+      text raw_response
+      timestamp created_at
+      timestamp updated_at
+    }
+
+    TICKETS {
+      bigint id PK
+      bigint incident_id FK
+      bigint workflow_run_id FK
+      text title
+      text description
+      text status
+      timestamp created_at
+      timestamp updated_at
+    }
+```
+
+### Table Descriptions
+
+* `incidents`: Incoming incident reports submitted by clients.
+* `workflow_runs`: Tracks the step and status of processing for each incident.
+* `idempotency_keys`: Deduplication keys mapped to workflow runs for safe retries.
+* `incident_classifications`: LLM-generated classification results tied to a workflow run.
+* `tickets`: Final human-facing tickets created from classified incidents.
+
+### Why tie tickets to workflow runs?
+
+Tickets are tied because the ticket generation is the output of a workflow run rather than an incident report. It also ensures **at-least-once processing** and **exactly-once ticket creation** The incident ID is is also stored in the tickets table for convenience.
