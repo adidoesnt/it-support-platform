@@ -309,3 +309,21 @@ The system includes observability to support production debugging and performanc
    SELECT * FROM tickets WHERE workflow_run_id = 123;
    -- Substitute "123" with the workflowRunId returned in step 2
    ```
+
+## Design Trade-offs
+
+### Sync versus Async
+
+The workflow includes long-running tasks such as incident classification. It is better to acknowledge the request and run these tasks asynchronously in the background than to keep the client connection open. This avoids client timeouts and allows retries without duplicating work (via idempotency keys), while the background worker handles long‑running steps.
+
+### Polling versus Push
+
+I felt that push-based message delivery was unnecessary for this use case. The work is long-running and asynchronous, which means that low-latency delivery is not critical.
+
+Polling also avoids long-lived connections and provides natural back-pressure, as workers pull messages at their own pace. Combined with SQS visibility timeouts, this allows failures and retries to be handled cleanly without coupling producers and consumers.
+
+### Why Ollama Locally?
+
+Ollama is used locally to enable fast, offline (and free) development without relying on external APIs. It keeps iteration costs low and avoids external network dependencies
+
+The `LLMClient` interface makes the LLM layer easy to swap later in production (e.g., OpenAI).
