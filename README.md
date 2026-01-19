@@ -82,3 +82,43 @@ flowchart LR
 * Each submission triggers one workflow run.
 * The submissions are idempotent, which is enforced using an `Idempotency-Key` header that is sent along with the request.
 * If a request is submitted with an `Idempotency-Key` for which a workflow has already been triggered, the existing workflow ID will be returned.
+
+## API Design
+
+The API service exposes the following endpoints to the client:
+
+### `POST /incidents` (API only)
+
+#### Request Structure
+
+**Headers**
+
+* `Idempotency-Key`: unique key for request deduplication
+
+**Body**
+
+```json
+{
+  "description": "Users cannot access the VPN from the London office."
+}
+```
+
+#### Response Structure
+
+**Body**
+
+```json
+{
+  "workflowRunId": 123
+}
+```
+
+> **Note:** If a request is submitted with an `Idempotency-Key` for which a workflow has already been triggered, the existing workflow ID associated with the provided key will be returned.
+
+### Actuator Endpoints (API + Worker)
+
+The following actuator endpoints are exposed by both the API and Worker services:
+
+* `/actuator/health`
+* `/actuator/info`
+* `/actuator/prometheus` (scraped by Prometheus to collect metrics)
