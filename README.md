@@ -9,6 +9,8 @@ The system provides full observability and provides idempotency guarantees for r
 
 ## Architecture
 
+### Architecture Diagram
+
 ```mermaid
 flowchart LR
     A[Client] --> B[API Service]
@@ -25,6 +27,8 @@ flowchart LR
     E --> P
     P --> GRAF[Grafana]
 ```
+
+### System Components
 
 The system architecture comprises the following components:
 
@@ -48,3 +52,33 @@ The system architecture comprises the following components:
 6. **Grafana**
    * Uses Prometheus as a data source
    * Provides visualisation and dashboards based on provided metrics
+
+## Workflow
+
+### Workflow Status State Machine
+
+These are the states a job can be in and the transitions between them.
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING
+    PENDING --> IN_PROGRESS
+    IN_PROGRESS --> COMPLETED
+    PENDING --> FAILED
+    IN_PROGRESS --> FAILED
+```
+
+### Workflow Steps
+
+These are the steps a job goes through while it is in the `IN_PROGRESS` state.
+
+```mermaid
+flowchart LR
+    PAYLOAD_VALIDATION --> INCIDENT_CLASSIFICATION --> TICKET_CREATION
+```
+
+### Additional Notes
+
+* Each submission triggers one workflow run.
+* The submissions are idempotent, which is enforced using an `Idempotency-Key` header that is sent along with the request.
+* If a request is submitted with an `Idempotency-Key` for which a workflow has already been triggered, the existing workflow ID will be returned.
