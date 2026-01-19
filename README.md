@@ -328,6 +328,15 @@ Ollama is used locally to enable fast, offline (and free) development without re
 
 The `LLMClient` interface makes the LLM layer easy to swap later in production (e.g., OpenAI).
 
+## Future Improvements
+
+In the future, I would like to add the following features:
+
+* **Retries** (with exponential backoff): Reduce transient failures and avoid excessive retries during short periods.
+* **Dead-letter queues** (for after max retries): Capture poison messages for inspection and manual intervention.
+* **Server-sent events/WebSockets**: Push workflow status updates to clients in real time.
+* **Agentic ticket creation** (integrated with project management tools): Automatically create and sync tickets with external systems.
+
 ## Why did I make this?
 
 In my current role, I am responsible for maintaining our internal tool stack. Having seen first-hand the compounding effect it has had on our productivity, I have strong belief in the importance of internal tools.
