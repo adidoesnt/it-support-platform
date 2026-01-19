@@ -122,3 +122,15 @@ The following actuator endpoints are exposed by both the API and Worker services
 * `/actuator/health`
 * `/actuator/info`
 * `/actuator/prometheus` (scraped by Prometheus to collect metrics)
+
+## Idempotency & Reliability
+
+The `Idempotency-Key` header has been mentioned a few time throughout this document.
+
+It is a concept that was largely popularised by [Stripe](https://stripe.com/) in order to prevent duplicate side effects from create/submit operations.
+
+In this system, if a request is submitted with an `Idempotency-Key` for which a workflow has already been triggered, the existing workflow ID associated with the provided key will be returned.
+
+This prevents duplicate tickets being opened for the same issue upon retries due to timeouts or network errors on the client.
+
+The `Idempotency-Key` combined with the SQS ensure **at-least-once** delivery.
