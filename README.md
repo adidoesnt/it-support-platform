@@ -233,3 +233,58 @@ erDiagram
 ### Why tie tickets to workflow runs?
 
 Tickets are tied because the ticket generation is the output of a workflow run rather than an incident report. It also ensures **at-least-once processing** and **exactly-once ticket creation** The incident ID is is also stored in the tickets table for convenience.
+
+## Local Development
+
+### Prerequisites
+
+* Java 21
+* Docker + Docker Compose
+* PostgreSQL client (optional, for local inspection)
+* LocalStack (via Docker)
+* Ollama (for local LLM classification)
+
+### Startup
+
+1. Start infrastructure services:
+   ```bash
+   cd infra
+   docker compose up -d
+   ```
+2. Run the API service:
+   ```bash
+   ./gradlew :services:api:bootRun
+   ```
+3. Run the worker service:
+   ```bash
+   ./gradlew :services:worker:bootRun
+   ```
+4. Verify:
+   * API: `http://localhost:8080/actuator/health`
+   * Worker: `http://localhost:8081/actuator/health`
+   * Prometheus: `http://localhost:9090`
+   * Grafana: `http://localhost:3000`
+
+### Usage
+
+#### Create an Incident
+
+1. Submit a new incident:
+   ```bash
+   curl -X POST http://localhost:8080/incidents \
+     -H "Content-Type: application/json" \
+     -H "Idempotency-Key: demo-incident-001" \
+     -d '{"description":"Users cannot access the VPN from the London office."}'
+   ```
+2. Example response:
+   ```json
+   { "workflowRunId": 123 }
+   ```
+3. The API acknowledges the request and enqueues the workflow run.
+4. The worker consumes the queue message, processes the workflow steps, and creates a ticket.
+5. Verify in the database:
+   ```sql
+   SELECT * FROM workflow_runs WHERE id = 123;
+   SELECT * FROM tickets WHERE workflow_run_id = 123;
+   -- Substitute "123" with the workflowRunId returned in step 2
+   ```
