@@ -234,6 +234,27 @@ erDiagram
 
 Tickets are tied because the ticket generation is the output of a workflow run rather than an incident report. It also ensures **at-least-once processing** and **exactly-once ticket creation** The incident ID is is also stored in the tickets table for convenience.
 
+## Observability and Debuggability
+
+The system includes observability to support production debugging and performance analysis.
+
+### Components
+
+* **Spring Boot Actuator** exposes service health and metrics endpoints.
+* **Micrometer** measures built-in and custom metrics for both API and Worker services.
+* **Prometheus** scrapes `/actuator/prometheus` on each service to collect metrics.
+* **Grafana** is used to visualise metrics via dashboards, providing operational insight
+
+### Custom metrics tracked
+
+* **Incidents received** (API): total incident submissions.
+  * Allows verification of request reception when clients report issues
+  * Allows us to correlate load with latency/failures
+* **Workflow step success/failure** (Worker): Tagged by step for completion and error rates.
+  * Allows us to find bottlenecks by identifying steps with high failure rates
+* **Step latency (P95)** (Worker): The slowest 5% of instances for each workflow step
+  * Allows to pinpoint high-latency steps
+
 ## Local Development
 
 ### Prerequisites
