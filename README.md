@@ -134,3 +134,28 @@ In this system, if a request is submitted with an `Idempotency-Key` for which a 
 This prevents duplicate tickets being opened for the same issue upon retries due to timeouts or network errors on the client.
 
 The `Idempotency-Key` combined with the SQS ensure **at-least-once** delivery.
+
+## AI/LLM Integration
+
+The system is designed to use AI as part of its infrastructure via the LLM Interface component.
+
+The component was designed to be vendor-agnostic. This was achieved using the **strategy pattern**. The intention was for the `OllamaClient` to be used locally and for the `OpenAIClient` to be used in production.
+
+```mermaid
+classDiagram
+    class LlmClient {
+        <<interface>>
+        +generateText(prompt)
+    }
+
+    class OllamaClient {
+        +generateText(prompt)
+    }
+
+    class OpenAiClient {
+        +generateText(prompt)
+    }
+
+    LlmClient <|.. OllamaClient
+    LlmClient <|.. OpenAiClient
+```
