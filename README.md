@@ -327,3 +327,7 @@ Polling also avoids long-lived connections and provides natural back-pressure, a
 Ollama is used locally to enable fast, offline (and free) development without relying on external APIs. It keeps iteration costs low and avoids external network dependencies
 
 The `LLMClient` interface makes the LLM layer easy to swap later in production (e.g., OpenAI).
+
+## Why did I make this?
+
+In my current role, I am responsible for maintaining our internal tool stack. Having seen first-hand the compounding effect it has had on our productivity, I have strong belief in the importance of internal tools.
