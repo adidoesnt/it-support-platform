@@ -1,21 +1,57 @@
 package com.adidoesnt.itsupportplatform.ticket.grpc;
 
+import java.util.Optional;
+
+import com.adidoesnt.itsupportplatform.ticket.TicketEntity;
+import com.adidoesnt.itsupportplatform.ticket.TicketEntityStatus;
+import com.adidoesnt.itsupportplatform.ticket.TicketMapper;
+import com.adidoesnt.itsupportplatform.ticket.TicketService;
+
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import lombok.RequiredArgsConstructor;
 import net.devh.boot.grpc.server.service.GrpcService;
 
 @GrpcService
+@RequiredArgsConstructor
 public class TicketGrpcService extends TicketServiceGrpc.TicketServiceImplBase {
+    private final TicketService ticketService;
+
     @Override
     public void createTicket(CreateTicketRequest request, StreamObserver<CreateTicketResponse> responseObserver) {
-        // TODO: Implement ticket creation logic
-        CreateTicketResponse response = CreateTicketResponse
-                .newBuilder()
-                .setSuccess(true)
-                .setTicket(Ticket.getDefaultInstance())
-                .build();
+        String title = request.getTitle();
+        if (title == null || title.isBlank()) {
+            responseObserver.onError(
+                    Status.INVALID_ARGUMENT.withDescription("title is required").asRuntimeException());
+            return;
+        }
 
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
+        Optional<String> description =
+                request.hasDescription() ? Optional.of(request.getDescription()) : Optional.empty();
+
+        Optional<TicketEntityStatus> status = Optional.empty();
+        if (request.hasStatus()) {
+            try {
+                status = Optional.of(TicketMapper.fromGrpcStatus(request.getStatus()));
+            } catch (IllegalArgumentException e) {
+                responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+                return;
+            }
+        }
+
+        try {
+            TicketEntity ticket = ticketService.createTicket(title.trim(), description, status);
+
+            CreateTicketResponse response = CreateTicketResponse.newBuilder()
+                    .setSuccess(true)
+                    .setTicket(TicketMapper.toGrpcTicket(ticket))
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(Status.INTERNAL.withCause(e).asRuntimeException());
+        }
     }
 
     @Override

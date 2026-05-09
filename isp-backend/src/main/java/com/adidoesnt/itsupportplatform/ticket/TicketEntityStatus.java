@@ -1,6 +1,6 @@
 package com.adidoesnt.itsupportplatform.ticket;
 
-public enum TicketStatus {
+public enum TicketEntityStatus {
     OPEN,
     IN_PROGRESS,
     RESOLVED,

@@ -23,7 +23,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Ticket {
+public class TicketEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -44,14 +44,14 @@ public class Ticket {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
-    private TicketStatus status = TicketStatus.OPEN;
+    private TicketEntityStatus status = TicketEntityStatus.OPEN;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Ticket that)) {
+        if (!(o instanceof TicketEntity that)) {
             return false;
         }
         return id != null && id.equals(that.id);
