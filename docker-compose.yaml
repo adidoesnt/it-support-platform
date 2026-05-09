@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:18
+    ports:
+      - 6543:5432
+    environment:
+      POSTGRES_USER: isp
+      POSTGRES_PASSWORD: isp_admin!
+      POSTGRES_DB: itsupportplatform
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+volumes:
+  postgres_data:
