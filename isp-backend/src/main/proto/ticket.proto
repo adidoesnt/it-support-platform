@@ -13,33 +13,49 @@ service TicketService {
   rpc DeleteTicketById(DeleteTicketByIdRequest) returns (DeleteTicketByIdResponse);
 }
 
+enum TicketStatus {
+  OPEN = 0;
+  IN_PROGRESS = 1;
+  RESOLVED = 2;
+  CLOSED = 3;
+}
+
 message CreateTicketRequest {
   // Required fields
   string title = 1;
 
   // Optional fields
   optional string description = 2;
-  optional string status = 3;
+  optional TicketStatus status = 3;
 }
 
 message CreateTicketResponse {
+  bool success = 1;
+  Ticket ticket = 2;
+}
+
+message Ticket {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string created_at = 4;
+  string updated_at = 5;
+  TicketStatus status = 6;
+}
+
+// TODO: Add optional pagination fields
+message GetTicketsRequest {}
+
+message GetTicketsResponse {
+  repeated Ticket tickets = 1;
+}
+
+message GetTicketByIdRequest {
   string id = 1;
 }
 
-// TODO: Add request fields
-message GetTicketsRequest {}
-
-// TODO: Update response fields
-message GetTicketsResponse {
-  string message = 1;
-}
-
-// TODO: Add request fields
-message GetTicketByIdRequest {}
-
-// TODO: Update response fields
 message GetTicketByIdResponse {
-  string message = 1;
+  Ticket ticket = 1;
 }
 
 message UpdateTicketByIdRequest {
@@ -48,11 +64,12 @@ message UpdateTicketByIdRequest {
   // Optional fields
   optional string title = 2;
   optional string description = 3;
-  optional string status = 4;
+  optional TicketStatus status = 4;
 }
 
 message UpdateTicketByIdResponse {
   bool success = 1;
+  Ticket ticket = 2;
 }
 
 message DeleteTicketByIdRequest {
