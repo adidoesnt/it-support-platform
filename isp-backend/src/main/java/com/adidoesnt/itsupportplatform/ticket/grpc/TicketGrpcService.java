@@ -90,13 +90,26 @@ public class TicketGrpcService extends TicketServiceGrpc.TicketServiceImplBase {
     @Override
     public void updateTicketById(UpdateTicketByIdRequest request,
             StreamObserver<UpdateTicketByIdResponse> responseObserver) {
-        // TODO: Implement ticket update logic
-        UpdateTicketByIdResponse response = UpdateTicketByIdResponse.newBuilder()
-                .setSuccess(true)
-                .build();
+        Long id = Long.parseLong(request.getId());
+        Optional<String> title = request.hasTitle() ? Optional.of(request.getTitle()) : Optional.empty();
+        Optional<String> description = request.hasDescription() ? Optional.of(request.getDescription())
+                : Optional.empty();
+        Optional<TicketEntityStatus> status = request.hasStatus()
+                ? Optional.of(TicketMapper.fromGrpcStatus(request.getStatus()))
+                : Optional.empty();
 
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
+        try {
+            TicketEntity ticket = ticketService.updateTicketById(id, title, description, status);
+            UpdateTicketByIdResponse response = UpdateTicketByIdResponse.newBuilder()
+                    .setSuccess(true)
+                    .setTicket(TicketMapper.toGrpcTicket(ticket))
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(Status.INTERNAL.withCause(e).asRuntimeException());
+        }
     }
 
     @Override
