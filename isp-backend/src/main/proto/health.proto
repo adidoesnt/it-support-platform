@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package com.adidoesnt.itsupportplatform.health;
+
+option java_multiple_files = true;
+option java_package = "com.adidoesnt.itsupportplatform.health.grpc";
+
+service HealthService {
+  rpc Ping(PingRequest) returns (PingResponse);
+}
+
+message PingRequest {}
+
+message PingResponse {
+  string message = 1;
+}
