@@ -13,12 +13,17 @@ service TicketService {
   rpc DeleteTicketById(DeleteTicketByIdRequest) returns (DeleteTicketByIdResponse);
 }
 
-// TODO: Add request fields
-message CreateTicketRequest {}
+message CreateTicketRequest {
+  // Required fields
+  string title = 1;
 
-// TODO: Update response fields
+  // Optional fields
+  optional string description = 2;
+  optional string status = 3;
+}
+
 message CreateTicketResponse {
-  string message = 1;
+  string id = 1;
 }
 
 // TODO: Add request fields

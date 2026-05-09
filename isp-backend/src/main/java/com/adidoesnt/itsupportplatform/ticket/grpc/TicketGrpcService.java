@@ -1,11 +1,16 @@
 package com.adidoesnt.itsupportplatform.ticket.grpc;
 
+import java.util.UUID;
+
 import io.grpc.stub.StreamObserver;
 
 public class TicketGrpcService extends TicketServiceGrpc.TicketServiceImplBase {
     @Override
     public void createTicket(CreateTicketRequest request, StreamObserver<CreateTicketResponse> responseObserver) {
-        CreateTicketResponse response = CreateTicketResponse.newBuilder().setMessage("Ticket created successfully")
+        // TODO: Implement ticket creation logic
+        CreateTicketResponse response = CreateTicketResponse
+                .newBuilder()
+                .setId(UUID.randomUUID().toString())
                 .build();
 
         responseObserver.onNext(response);
