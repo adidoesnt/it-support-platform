@@ -1,6 +1,8 @@
 package com.adidoesnt.itsupportplatform.ticket.grpc;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.adidoesnt.itsupportplatform.ticket.TicketEntity;
 import com.adidoesnt.itsupportplatform.ticket.TicketEntityStatus;
@@ -26,8 +28,8 @@ public class TicketGrpcService extends TicketServiceGrpc.TicketServiceImplBase {
             return;
         }
 
-        Optional<String> description =
-                request.hasDescription() ? Optional.of(request.getDescription()) : Optional.empty();
+        Optional<String> description = request.hasDescription() ? Optional.of(request.getDescription())
+                : Optional.empty();
 
         Optional<TicketEntityStatus> status = Optional.empty();
         if (request.hasStatus()) {
@@ -57,7 +59,12 @@ public class TicketGrpcService extends TicketServiceGrpc.TicketServiceImplBase {
     @Override
     public void getTickets(GetTicketsRequest request, StreamObserver<GetTicketsResponse> responseObserver) {
         // TODO: Implement ticket retrieval logic
-        GetTicketsResponse response = GetTicketsResponse.newBuilder().build();
+        List<TicketEntity> tickets = ticketService.getTickets();
+        GetTicketsResponse response = GetTicketsResponse.newBuilder()
+                .addAllTickets(tickets.stream()
+                        .map(TicketMapper::toGrpcTicket)
+                        .collect(Collectors.toList()))
+                .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
@@ -65,9 +72,15 @@ public class TicketGrpcService extends TicketServiceGrpc.TicketServiceImplBase {
 
     @Override
     public void getTicketById(GetTicketByIdRequest request, StreamObserver<GetTicketByIdResponse> responseObserver) {
-        // TODO: Implement ticket retrieval logic
+        Long id = Long.parseLong(request.getId());
+        Optional<TicketEntity> ticket = ticketService.getTicketById(id);
+        if (ticket.isEmpty()) {
+            responseObserver.onError(Status.NOT_FOUND.withDescription("Ticket not found").asRuntimeException());
+            return;
+        }
+
         GetTicketByIdResponse response = GetTicketByIdResponse.newBuilder()
-                .setTicket(GrpcTicket.getDefaultInstance())
+                .setTicket(TicketMapper.toGrpcTicket(ticket.get()))
                 .build();
 
         responseObserver.onNext(response);
