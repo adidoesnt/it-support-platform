@@ -1,6 +1,10 @@
 spring:
   application:
     name: itsupportplatform
+  datasource:
+    url: jdbc:postgresql://localhost:6543/itsupportplatform
+    username: isp
+    password: isp_admin!
   grpc:
     server:
       port: 9090
