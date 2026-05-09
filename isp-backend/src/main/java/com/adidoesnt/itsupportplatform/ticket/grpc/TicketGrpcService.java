@@ -102,7 +102,13 @@ public class TicketGrpcService extends TicketServiceGrpc.TicketServiceImplBase {
     @Override
     public void deleteTicketById(DeleteTicketByIdRequest request,
             StreamObserver<DeleteTicketByIdResponse> responseObserver) {
-        // TODO: Implement ticket deletion logic
+        Long id = Long.parseLong(request.getId());
+        boolean deleted = ticketService.deleteTicketById(id);
+        if (!deleted) {
+            responseObserver.onError(Status.NOT_FOUND.withDescription("Ticket not found").asRuntimeException());
+            return;
+        }
+
         DeleteTicketByIdResponse response = DeleteTicketByIdResponse.newBuilder()
                 .setSuccess(true)
                 .build();
