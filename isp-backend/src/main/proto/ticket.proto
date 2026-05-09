@@ -42,18 +42,23 @@ message GetTicketByIdResponse {
   string message = 1;
 }
 
-// TODO: Add request fields
-message UpdateTicketByIdRequest {}
+message UpdateTicketByIdRequest {
+  string id = 1;
 
-// TODO: Update response fields
-message UpdateTicketByIdResponse {
-  string message = 1;
+  // Optional fields
+  optional string title = 2;
+  optional string description = 3;
+  optional string status = 4;
 }
 
-// TODO: Add request fields
-message DeleteTicketByIdRequest {}
+message UpdateTicketByIdResponse {
+  bool success = 1;
+}
 
-// TODO: Update response fields
+message DeleteTicketByIdRequest {
+  string id = 1;
+}
+
 message DeleteTicketByIdResponse {
-  string message = 1;
+  bool success = 1;
 }

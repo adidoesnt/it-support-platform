@@ -39,7 +39,7 @@ public class TicketGrpcService extends TicketServiceGrpc.TicketServiceImplBase {
     public void updateTicketById(UpdateTicketByIdRequest request,
             StreamObserver<UpdateTicketByIdResponse> responseObserver) {
         UpdateTicketByIdResponse response = UpdateTicketByIdResponse.newBuilder()
-                .setMessage("Ticket updated successfully")
+                .setSuccess(true)
                 .build();
 
         responseObserver.onNext(response);
@@ -50,7 +50,7 @@ public class TicketGrpcService extends TicketServiceGrpc.TicketServiceImplBase {
     public void deleteTicketById(DeleteTicketByIdRequest request,
             StreamObserver<DeleteTicketByIdResponse> responseObserver) {
         DeleteTicketByIdResponse response = DeleteTicketByIdResponse.newBuilder()
-                .setMessage("Ticket deleted successfully")
+                .setSuccess(true)
                 .build();
 
         responseObserver.onNext(response);
