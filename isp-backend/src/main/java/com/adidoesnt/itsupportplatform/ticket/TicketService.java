@@ -6,7 +6,6 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -37,5 +36,14 @@ public class TicketService {
     public Optional<Ticket> getTicketById(Long id) {
         Optional<Ticket> ticket = ticketRepository.findById(id);
         return ticket;
+    }
+
+    @Transactional
+    public boolean deleteTicketById(Long id) {
+        if (!ticketRepository.existsById(id)) {
+            return false;
+        }
+        ticketRepository.deleteById(id);
+        return true;
     }
 }
