@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package com.adidoesnt.itsupportplatform.ticket;
+
+option java_multiple_files = true;
+option java_package = "com.adidoesnt.itsupportplatform.ticket.grpc";
+
+service TicketService {
+  rpc CreateTicket(CreateTicketRequest) returns (CreateTicketResponse);
+  rpc GetTickets(GetTicketsRequest) returns (GetTicketsResponse);
+  rpc GetTicketById(GetTicketByIdRequest) returns (GetTicketByIdResponse);
+  rpc UpdateTicketById(UpdateTicketByIdRequest) returns (UpdateTicketByIdResponse);
+  rpc DeleteTicketById(DeleteTicketByIdRequest) returns (DeleteTicketByIdResponse);
+}
+
+// TODO: Add request fields
+message CreateTicketRequest {}
+
+// TODO: Update response fields
+message CreateTicketResponse {
+  string message = 1;
+}
+
+// TODO: Add request fields
+message GetTicketsRequest {}
+
+// TODO: Update response fields
+message GetTicketsResponse {
+  string message = 1;
+}
+
+// TODO: Add request fields
+message GetTicketByIdRequest {}
+
+// TODO: Update response fields
+message GetTicketByIdResponse {
+  string message = 1;
+}
+
+// TODO: Add request fields
+message UpdateTicketByIdRequest {}
+
+// TODO: Update response fields
+message UpdateTicketByIdResponse {
+  string message = 1;
+}
+
+// TODO: Add request fields
+message DeleteTicketByIdRequest {}
+
+// TODO: Update response fields
+message DeleteTicketByIdResponse {
+  string message = 1;
+}
