@@ -2,26 +2,26 @@ package com.adidoesnt.itsupportplatform.ticket;
 
 import java.time.Instant;
 
-import com.adidoesnt.itsupportplatform.ticket.grpc.Ticket;
-import com.adidoesnt.itsupportplatform.ticket.grpc.TicketStatus;
+import com.adidoesnt.itsupportplatform.ticket.grpc.GrpcTicket;
+import com.adidoesnt.itsupportplatform.ticket.grpc.TicketGrpcStatus;
 
 public final class TicketMapper {
 
     private TicketMapper() {
     }
 
-    public static Ticket toGrpcTicket(TicketEntity ticket) {
-        return Ticket.newBuilder()
+    public static GrpcTicket toGrpcTicket(TicketEntity ticket) {
+        return GrpcTicket.newBuilder()
                 .setId(ticket.getId() != null ? ticket.getId().toString() : "")
                 .setTitle(ticket.getTitle() != null ? ticket.getTitle() : "")
                 .setDescription(ticket.getDescription() != null ? ticket.getDescription() : "")
                 .setCreatedAt(ticket.getCreatedAt() != null ? ticket.getCreatedAt().toString() : "")
                 .setUpdatedAt(ticket.getUpdatedAt() != null ? ticket.getUpdatedAt().toString() : "")
-                .setStatus(TicketStatus.valueOf(ticket.getStatus().name()))
+                .setStatus(TicketGrpcStatus.valueOf(ticket.getStatus().name()))
                 .build();
     }
 
-    public static TicketEntity toTicketEntity(Ticket ticket) {
+    public static TicketEntity toTicketEntity(GrpcTicket ticket) {
         TicketEntity entity = new TicketEntity();
         if (!ticket.getId().isBlank()) {
             entity.setId(Long.parseLong(ticket.getId()));
@@ -30,8 +30,8 @@ public final class TicketMapper {
         if (!ticket.getDescription().isBlank()) {
             entity.setDescription(ticket.getDescription());
         }
-        TicketStatus grpcStatus = ticket.getStatus();
-        if (grpcStatus != TicketStatus.UNRECOGNIZED) {
+        TicketGrpcStatus grpcStatus = ticket.getStatus();
+        if (grpcStatus != TicketGrpcStatus.UNRECOGNIZED) {
             entity.setStatus(TicketEntityStatus.valueOf(grpcStatus.name()));
         }
         if (!ticket.getCreatedAt().isBlank()) {
@@ -43,14 +43,14 @@ public final class TicketMapper {
         return entity;
     }
 
-    public static TicketEntityStatus fromGrpcStatus(TicketStatus grpc) {
-        if (grpc == null || grpc == TicketStatus.UNRECOGNIZED) {
+    public static TicketEntityStatus fromGrpcStatus(TicketGrpcStatus grpc) {
+        if (grpc == null || grpc == TicketGrpcStatus.UNRECOGNIZED) {
             throw new IllegalArgumentException("Invalid ticket status");
         }
         return TicketEntityStatus.valueOf(grpc.name());
     }
 
-    public static TicketStatus toGrpcStatus(TicketEntityStatus status) {
-        return TicketStatus.valueOf(status.name());
+    public static TicketGrpcStatus toGrpcStatus(TicketEntityStatus status) {
+        return TicketGrpcStatus.valueOf(status.name());
     }
 }

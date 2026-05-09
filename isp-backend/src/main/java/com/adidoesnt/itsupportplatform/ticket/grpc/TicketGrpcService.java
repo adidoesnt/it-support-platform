@@ -67,7 +67,7 @@ public class TicketGrpcService extends TicketServiceGrpc.TicketServiceImplBase {
     public void getTicketById(GetTicketByIdRequest request, StreamObserver<GetTicketByIdResponse> responseObserver) {
         // TODO: Implement ticket retrieval logic
         GetTicketByIdResponse response = GetTicketByIdResponse.newBuilder()
-                .setTicket(Ticket.getDefaultInstance())
+                .setTicket(GrpcTicket.getDefaultInstance())
                 .build();
 
         responseObserver.onNext(response);

@@ -51,7 +51,7 @@ public class TicketService {
 
         Optional<TicketEntity> ticket = ticketRepository.findById(id);
         if (ticket.isEmpty()) {
-            throw new EntityNotFoundException("Ticket not found");
+            throw new EntityNotFoundException("GrpcTicket not found");
         }
 
         TicketEntity ticketToSave = ticket.get();
