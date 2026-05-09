@@ -1,7 +1,9 @@
 package com.adidoesnt.itsupportplatform.ticket.grpc;
 
 import io.grpc.stub.StreamObserver;
+import net.devh.boot.grpc.server.service.GrpcService;
 
+@GrpcService
 public class TicketGrpcService extends TicketServiceGrpc.TicketServiceImplBase {
     @Override
     public void createTicket(CreateTicketRequest request, StreamObserver<CreateTicketResponse> responseObserver) {
