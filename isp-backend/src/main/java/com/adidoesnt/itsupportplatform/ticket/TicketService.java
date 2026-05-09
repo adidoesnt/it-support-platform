@@ -1,10 +1,12 @@
 package com.adidoesnt.itsupportplatform.ticket;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.transaction.Transactional;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -19,8 +21,21 @@ public class TicketService {
         ticket.setTitle(title);
         description.ifPresent(ticket::setDescription);
         ticket.setStatus(status.orElse(TicketStatus.OPEN));
-        
+
         Ticket savedTicket = ticketRepository.save(ticket);
         return savedTicket;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Ticket> getTickets() {
+        // TODO: Implement pagination
+        List<Ticket> tickets = ticketRepository.findAll();
+        return tickets;
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Ticket> getTicketById(Long id) {
+        Optional<Ticket> ticket = ticketRepository.findById(id);
+        return ticket;
     }
 }
